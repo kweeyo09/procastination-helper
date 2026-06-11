@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FocusNest</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&family=Caveat:wght@500&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Ambient lamp glow — signature element -->
+  <div class="lamp-glow" id="lamp-glow"></div>
+
+  <!-- API Key Modal -->
+  <div class="modal" id="api-modal">
+    <div class="modal-card">
+      <div class="modal-icon">🔑</div>
+      <h2>Anthropic API Key</h2>
+      <p>Saved to your browser only. Never sent anywhere except Anthropic.</p>
+      <input type="password" id="api-key-input" placeholder="sk-ant-api..." autocomplete="off" />
+      <button id="save-key-btn">Save &amp; continue →</button>
+      <a href="https://console.anthropic.com" target="_blank" rel="noopener" class="modal-link">
+        Get a free key at console.anthropic.com ↗
+      </a>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <span class="brand-glyph">✦</span>
+      <span class="brand-name">FocusNest</span>
+    </div>
+    <button class="icon-btn" id="settings-btn" title="API Settings" aria-label="API Settings">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+        <circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M2.93 2.93l1.06 1.06M12.01 12.01l1.06 1.06M13.07 2.93l-1.06 1.06M3.99 12.01l-1.06 1.06"
+          stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </header>
+
+  <!-- Main -->
+  <main>
+
+    <section class="hero">
+      <h1>What are we <em>actually</em><br>doing today?</h1>
+      <p class="sub">Type one big task. I'll split it into steps so small<br>you'll almost feel silly for having dreaded it.</p>
+    </section>
+
+    <div class="input-group">
+      <textarea
+        id="task-input"
+        placeholder="e.g. Write my essay introduction..."
+        rows="2"
+        aria-label="Task to break down"
+      ></textarea>
+      <button id="breakdown-btn">Break it down ✦</button>
+    </div>
+
+    <!-- Progress bar (hidden until steps exist) -->
+    <div class="progress-row hidden" id="progress-row">
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <span class="progress-count" id="progress-count">0 / 0</span>
+    </div>
+
+    <!-- Loading state -->
+    <div class="loading hidden" id="loading">
+      <div class="dots"><span></span><span></span><span></span></div>
+      <p class="loading-text" id="loading-text">Making it manageable...</p>
+    </div>
+
+    <!-- Steps list -->
+    <ol class="steps" id="steps" aria-label="Task steps"></ol>
+
+    <!-- All done -->
+    <div class="done-state hidden" id="done-state">
+      <p class="done-headline">✦ You did it. ✦</p>
+      <p class="done-sub">All steps complete. Take a breath.</p>
+      <button class="ghost-btn" id="reset-btn">Start a new task →</button>
+    </div>
+
+  </main>
+
+  <!-- Toast / encouragement -->
+  <div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

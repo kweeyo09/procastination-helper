@@ -1,0 +1,542 @@
+/* ────────────────────────────────
+   Reset
+────────────────────────────────── */
+*, *::before, *::after {
+  margin: 0; padding: 0; box-sizing: border-box;
+}
+
+/* ────────────────────────────────
+   Design tokens
+────────────────────────────────── */
+:root {
+  --bg:           #0D0A08;
+  --surface:      #171210;
+  --surface-2:    #1E1813;
+  --border:       #2B2019;
+  --border-soft:  #1F1814;
+
+  --amber:        #C9893A;
+  --amber-glow:   #E3A455;
+  --amber-pale:   #EDD09A;
+  --amber-dim:    #7A5525;
+
+  --sage:         #6A9E68;
+  --sage-bright:  #8ABF88;
+
+  --text:         #EDE3CB;
+  --text-dim:     #7A6A56;
+  --text-faint:   #352A1F;
+
+  --font-serif:   'Playfair Display', Georgia, serif;
+  --font-sans:    'DM Sans', system-ui, sans-serif;
+  --font-hand:    'Caveat', cursive;
+
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+  --r-pill: 999px;
+}
+
+/* ────────────────────────────────
+   Base
+────────────────────────────────── */
+html { font-size: 15px; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+  /* Subtle grain texture — analog feel */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+}
+
+/* ────────────────────────────────
+   SIGNATURE ELEMENT: Lamp Glow
+   Warm amber radial gradient fixed
+   at the top — like a desk lamp
+   casting light down onto your work.
+   Brightens when you finish everything.
+────────────────────────────────── */
+.lamp-glow {
+  position: fixed;
+  top: -160px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 720px;
+  height: 500px;
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    rgba(195, 140, 55, 0.15) 0%,
+    rgba(180, 115, 40, 0.05) 45%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 0;
+  transition: background 1s ease;
+}
+.lamp-glow.bright {
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    rgba(220, 160, 65, 0.36) 0%,
+    rgba(200, 135, 50, 0.14) 45%,
+    transparent 70%
+  );
+}
+
+/* ────────────────────────────────
+   Header
+────────────────────────────────── */
+header {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 28px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-serif);
+  font-size: 17px;
+  color: var(--amber-pale);
+  letter-spacing: 0.03em;
+  user-select: none;
+}
+.brand-glyph {
+  color: var(--amber);
+  font-size: 13px;
+}
+
+.icon-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text-dim);
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, color 0.2s;
+}
+.icon-btn:hover {
+  border-color: var(--amber-dim);
+  color: var(--amber-glow);
+}
+
+/* ────────────────────────────────
+   Main layout
+────────────────────────────────── */
+main {
+  position: relative;
+  z-index: 1;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 52px 24px 96px;
+}
+
+/* ────────────────────────────────
+   Hero
+────────────────────────────────── */
+.hero { margin-bottom: 36px; }
+
+.hero h1 {
+  font-family: var(--font-serif);
+  font-size: clamp(26px, 5vw, 36px);
+  font-weight: 400;
+  line-height: 1.25;
+  margin-bottom: 12px;
+}
+.hero h1 em {
+  font-style: italic;
+  color: var(--amber-glow);
+}
+.sub {
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 300;
+  line-height: 1.75;
+}
+
+/* ────────────────────────────────
+   Task input
+────────────────────────────────── */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+textarea {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.65;
+  padding: 13px 15px;
+  resize: none;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+textarea::placeholder { color: var(--text-faint); }
+textarea:focus {
+  border-color: var(--amber-dim);
+  box-shadow: 0 0 0 3px rgba(201, 137, 58, 0.08);
+}
+
+#breakdown-btn {
+  align-self: flex-end;
+  background: var(--amber);
+  border: none;
+  border-radius: var(--r-sm);
+  color: #0D0A08;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 10px 18px;
+  letter-spacing: 0.01em;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+}
+#breakdown-btn:hover {
+  background: var(--amber-glow);
+  box-shadow: 0 0 18px rgba(201, 137, 58, 0.32);
+}
+#breakdown-btn:active { transform: scale(0.97); }
+#breakdown-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ────────────────────────────────
+   Progress bar
+────────────────────────────────── */
+.progress-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.progress-track {
+  flex: 1;
+  height: 3px;
+  background: var(--border);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--amber), var(--amber-glow));
+  border-radius: var(--r-pill);
+  transition: width 0.5s ease;
+  box-shadow: 0 0 6px rgba(201, 137, 58, 0.55);
+}
+.progress-count {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+}
+
+/* ────────────────────────────────
+   Loading
+────────────────────────────────── */
+.loading {
+  text-align: center;
+  padding: 44px 0;
+}
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  margin-bottom: 14px;
+}
+.dots span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--amber);
+  animation: pulse 1.3s ease-in-out infinite;
+}
+.dots span:nth-child(2) { animation-delay: 0.22s; }
+.dots span:nth-child(3) { animation-delay: 0.44s; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.15; transform: scale(0.75); }
+  50%       { opacity: 1;    transform: scale(1);    }
+}
+.loading-text {
+  color: var(--text-dim);
+  font-family: var(--font-hand);
+  font-size: 18px;
+}
+
+/* ────────────────────────────────
+   Steps list
+────────────────────────────────── */
+.steps {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.step {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 13px 15px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  transition: border-color 0.25s, opacity 0.35s, box-shadow 0.25s;
+  animation: slideUp 0.35s ease both;
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* Active = lamp is shining on it */
+.step.active {
+  border-color: rgba(201, 137, 58, 0.42);
+  background: var(--surface-2);
+  box-shadow:
+    0 0 0 0.5px rgba(201, 137, 58, 0.12),
+    inset 3px 0 0 rgba(201, 137, 58, 0.5);
+}
+
+/* Done = fades back, crossed off */
+.step.done {
+  opacity: 0.38;
+  border-color: var(--border-soft);
+  box-shadow: none;
+}
+.step.done .step-label {
+  text-decoration: line-through;
+  text-decoration-color: var(--sage);
+}
+
+/* ── Custom checkbox ── */
+.check-box {
+  flex-shrink: 0;
+  width: 19px;
+  height: 19px;
+  border: 1.5px solid var(--border);
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+  transition: border-color 0.2s, background 0.2s;
+}
+.step.active .check-box { border-color: var(--amber-dim); }
+.check-box:hover         { border-color: var(--amber); }
+
+.step.done .check-box {
+  background: var(--sage);
+  border-color: var(--sage);
+}
+.check-box svg { display: none; }
+.step.done .check-box svg { display: block; color: #0D0A08; }
+
+.check-box.bounce {
+  animation: checkBounce 0.3s ease;
+}
+@keyframes checkBounce {
+  0%   { transform: scale(1);    }
+  35%  { transform: scale(1.3);  }
+  65%  { transform: scale(0.88); }
+  100% { transform: scale(1);    }
+}
+
+/* ── Step label (contenteditable) ── */
+.step-label {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.55;
+  outline: none;
+  word-break: break-word;
+  cursor: text;
+  caret-color: var(--amber-glow);
+}
+.step-label:focus { color: var(--amber-pale); }
+
+/* ────────────────────────────────
+   All done state
+────────────────────────────────── */
+.done-state {
+  text-align: center;
+  padding: 52px 0 20px;
+  animation: fadeUp 0.7s ease both;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+.done-headline {
+  font-family: var(--font-serif);
+  font-size: 26px;
+  font-weight: 400;
+  color: var(--amber-pale);
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+.done-sub {
+  font-family: var(--font-hand);
+  font-size: 17px;
+  color: var(--text-dim);
+  margin-bottom: 28px;
+}
+.ghost-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text-dim);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  padding: 9px 17px;
+  transition: border-color 0.2s, color 0.2s;
+}
+.ghost-btn:hover {
+  border-color: var(--amber-dim);
+  color: var(--amber-glow);
+}
+
+/* ────────────────────────────────
+   Toast
+────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  padding: 9px 18px;
+  font-family: var(--font-hand);
+  font-size: 16px;
+  color: var(--text);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 300;
+  white-space: nowrap;
+  transition: opacity 0.25s, transform 0.25s;
+}
+.toast.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ────────────────────────────────
+   API Key modal
+────────────────────────────────── */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 6, 4, 0.82);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 20px;
+}
+.modal-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 36px 28px;
+  max-width: 360px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: center;
+}
+.modal-icon { font-size: 26px; margin-bottom: 2px; }
+.modal-card h2 {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-weight: 400;
+}
+.modal-card p {
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.modal-card input[type="password"] {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  padding: 11px 13px;
+  outline: none;
+  text-align: center;
+  transition: border-color 0.2s;
+  margin-top: 4px;
+}
+.modal-card input:focus { border-color: var(--amber-dim); }
+.modal-card button {
+  background: var(--amber);
+  border: none;
+  border-radius: var(--r-sm);
+  color: #0D0A08;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 11px;
+  transition: background 0.2s, box-shadow 0.2s;
+  margin-top: 2px;
+}
+.modal-card button:hover {
+  background: var(--amber-glow);
+  box-shadow: 0 0 16px rgba(201, 137, 58, 0.28);
+}
+.modal-link {
+  color: var(--text-dim);
+  font-size: 11px;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.modal-link:hover { color: var(--amber-glow); }
+
+/* ────────────────────────────────
+   Utilities
+────────────────────────────────── */
+.hidden { display: none !important; }
+
+/* ────────────────────────────────
+   Responsive
+────────────────────────────────── */
+@media (max-width: 480px) {
+  main    { padding: 36px 16px 80px; }
+  header  { padding: 16px 18px; }
+  .hero h1 { font-size: 24px; }
+  .toast  { white-space: normal; max-width: 80vw; text-align: center; }
+}
