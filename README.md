@@ -10,7 +10,7 @@ FocusNest is a warm, paper-toned web app that breaks overwhelming tasks into 6 m
 
 ## Features
 
-- **Built-in breakdown engine** — no AI key needed; rule-based logic covers 10 task categories (writing, coding, studying, cleaning, reading, exercise, meetings, forms, planning, email) with a smart fallback for anything else
+- **Built-in breakdown engine** — rule-based logic covers 10 task categories (writing, coding, studying, cleaning, reading, exercise, meetings, forms, planning, email) with a smart fallback for anything else
 - **Editable steps** — click any step label to tweak the wording
 - **Active step highlight** — terracotta left-bar accent tracks your current step
 - **Progress bar** — mustard-to-terracotta gradient, satisfying to watch
