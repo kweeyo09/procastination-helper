@@ -175,8 +175,65 @@ textarea:focus {
   box-shadow: 0 0 0 3px rgba(255, 194, 51, 0.16);
 }
 
+.btn-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* AI enable nudge */
+.ai-nudge {
+  margin: 0;
+}
+.ai-enable-btn {
+  background: none;
+  border: none;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s;
+  white-space: nowrap;
+}
+.ai-enable-btn:hover { color: var(--terra-light); }
+
+/* AI download progress */
+.ai-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.ai-status-text {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.ai-track {
+  flex: 1;
+  height: 2px;
+  background: var(--border);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+.ai-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--mustard), var(--terra));
+  border-radius: var(--r-pill);
+  transition: width 0.4s ease;
+}
+
 #breakdown-btn {
-  align-self: flex-end;
+  flex-shrink: 0;
   background: var(--mustard);
   border: none;
   border-radius: var(--r-sm);
@@ -188,6 +245,7 @@ textarea:focus {
   padding: 11px 22px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  white-space: nowrap;
   transition: background 0.15s, box-shadow 0.2s, transform 0.1s;
 }
 #breakdown-btn:hover {

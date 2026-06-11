@@ -1,7 +1,7 @@
 // app.js — FocusNest
 'use strict';
 
-// ── Encouragements ───────────────────────────
+// ── Encouragements ────────────────────────────
 const KUDOS = [
   "You started. That's the hard bit.",
   "One step done. Look at you go.",
@@ -25,32 +25,36 @@ const LOADING_PHRASES = [
   "Almost ready...",
 ];
 
-// ── State ────────────────────────────────────
+// ── State ─────────────────────────────────────
 let steps = [];
+let pipe = null;
+let modelState = 'idle'; // idle | downloading | ready | failed
 
-// ── DOM refs ─────────────────────────────────
+// ── DOM refs ──────────────────────────────────
 const dom = {
-  taskInput:     document.getElementById('task-input'),
-  breakdownBtn:  document.getElementById('breakdown-btn'),
-  progressRow:   document.getElementById('progress-row'),
-  progressFill:  document.getElementById('progress-fill'),
-  progressCount: document.getElementById('progress-count'),
-  loading:       document.getElementById('loading'),
-  loadingText:   document.getElementById('loading-text'),
-  steps:         document.getElementById('steps'),
-  doneState:     document.getElementById('done-state'),
-  resetBtn:      document.getElementById('reset-btn'),
-  toast:         document.getElementById('toast'),
-  lamp:          document.getElementById('lamp-glow'),
+  taskInput:      document.getElementById('task-input'),
+  breakdownBtn:   document.getElementById('breakdown-btn'),
+  progressRow:    document.getElementById('progress-row'),
+  progressFill:   document.getElementById('progress-fill'),
+  progressCount:  document.getElementById('progress-count'),
+  loading:        document.getElementById('loading'),
+  loadingText:    document.getElementById('loading-text'),
+  steps:          document.getElementById('steps'),
+  doneState:      document.getElementById('done-state'),
+  resetBtn:       document.getElementById('reset-btn'),
+  toast:          document.getElementById('toast'),
+  lamp:           document.getElementById('lamp-glow'),
+  aiNudge:        document.getElementById('ai-nudge'),
+  aiEnableBtn:    document.getElementById('ai-enable-btn'),
+  aiStatus:       document.getElementById('ai-status'),
+  aiStatusText:   document.getElementById('ai-status-text'),
+  aiProgressFill: document.getElementById('ai-progress-fill'),
 };
 
 // ── Breakdown trigger ─────────────────────────
 dom.breakdownBtn.addEventListener('click', runBreakdown);
 dom.taskInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    runBreakdown();
-  }
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); runBreakdown(); }
 });
 
 async function runBreakdown() {
@@ -58,15 +62,49 @@ async function runBreakdown() {
   if (!task) { dom.taskInput.focus(); return; }
 
   setLoading(true);
-  // Brief pause so the loading state feels intentional
-  await new Promise(r => setTimeout(r, 500 + Math.random() * 400));
+  await new Promise(r => setTimeout(r, 400 + Math.random() * 300));
 
-  const stepTexts = breakdownLocally(task);
+  let stepTexts;
+  if (pipe && modelState === 'ready') {
+    stepTexts = (await generateWithAI(task)) || breakdownLocally(task);
+  } else {
+    stepTexts = breakdownLocally(task);
+  }
+
   renderSteps(stepTexts);
   setLoading(false);
 }
 
-// ── Rule-based breakdown engine ───────────────
+// ── Context extraction ────────────────────────
+function extractContext(task) {
+  const t = task.trim();
+  const lower = t.toLowerCase();
+
+  // Strip leading action verb + optional article to get the core subject
+  const withoutVerb = t.replace(
+    /^(write|draft|finish|complete|do|create|make|fix|build|start|study|read|clean|organis[e]?|organiz[e]?|plan|send|fill|code|debug|implement|prepare|prep|reply|respond|review|update|edit|research|find|check)\s+(a\s+|an\s+|my\s+|the\s+|this\s+|out\s+|to\s+|for\s+)?/i, ''
+  ).trim();
+
+  // Topic: what comes after "on", "about", "regarding"
+  const aboutM = withoutVerb.match(/\b(?:on|about|regarding)\s+(.+?)(?:\s+(?:for|by|before|due)\b|\s*$)/i);
+  const topic = aboutM ? aboutM[1].trim() : null;
+
+  // Audience / context: "for my class", "for work", "for my boss" etc.
+  const forM = lower.match(/\bfor\s+(my\s+)?(class|work|school|uni|university|college|client|boss|manager|teacher|professor|job|interview|project|course|exam|test|portfolio)\b/);
+  const audience = forM ? forM[0].replace(/^for\s+(my\s+)?/, '').trim() : null;
+
+  // Named entities: 2+ consecutive Title Case words
+  const namedM = t.match(/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+\b/g) || [];
+  const named = namedM.length ? namedM[0] : null;
+
+  // Core: most specific thing we found
+  const raw = topic || named || withoutVerb;
+  const core = raw.length > 52 ? raw.slice(0, 52).replace(/\s+\S*$/, '') + '…' : raw;
+
+  const isUrgent = /\b(urgent|asap|quick|fast|tonight|today|now|immediately|by tomorrow)\b/i.test(lower);
+
+  return { topic, audience, named, core, withoutVerb, isUrgent };
+}
 
 function brief(task, max = 42) {
   const cleaned = task
@@ -75,147 +113,328 @@ function brief(task, max = 42) {
   return cleaned.length > max ? cleaned.slice(0, max) + '…' : cleaned;
 }
 
+// ── Rule-based breakdown engine ───────────────
 const CATEGORIES = [
   {
     name: 'email',
     test: t => /\bemail\b|reply to|respond to|write.*message|send.*message|send.*email/.test(t),
-    steps: () => [
-      `Open your email client right now`,
-      `Find or create the message you need to reply to`,
-      `Type just the subject line — one clear phrase`,
-      `Write one sentence: the single most important thing to say`,
-      `Add a greeting and a sign-off around that sentence`,
-      `Read it once end-to-end, then hit Send`,
-    ],
+    steps: task => {
+      const ctx = extractContext(task);
+      const lower = task.toLowerCase();
+      const isReply = /reply|respond|answer/.test(lower);
+      const recipient = ctx.audience ||
+        (lower.includes('boss') ? 'your boss' :
+         lower.includes('client') ? 'your client' :
+         lower.includes('professor') ? 'your professor' : null);
+      const about = ctx.topic ? ` about ${ctx.topic}` : '';
+      const toWhom = recipient ? ` to ${recipient}` : '';
+
+      return isReply ? [
+        `Open the email thread${toWhom} right now — don't close it`,
+        `Read their message once and identify the one thing they actually need from you`,
+        `Start your reply with their name: "Hi [name]," — that alone breaks the block`,
+        `Write your answer to the main point${about} in 2–4 sentences, nothing more`,
+        `Add one clear next step at the end: what happens now, and by when`,
+        `Read it once, check the tone sounds like you, then hit Send`,
+      ] : [
+        `Open a new email compose window${toWhom ? ' addressed to ' + recipient : ''}`,
+        `Write the subject line first — one phrase that tells them exactly what this is${about}`,
+        `Write one sentence: the single most important thing you need to say${about}`,
+        `Add context around that sentence: why you're writing, what you need from them`,
+        `Close with a specific ask — not "let me know" but exactly what you want and when`,
+        `Read it once end-to-end, adjust tone if needed, then Send`,
+      ];
+    },
   },
   {
     name: 'writing',
     test: t => /\b(write|draft|essay|blog|article|paragraph|letter|introduction|conclusion|report|caption|summarize|summarise|compose)\b/.test(t),
     steps: task => {
-      const s = brief(task);
+      const ctx = extractContext(task);
+      const lower = task.toLowerCase();
+      const what = ctx.core;
+      const forWhat = ctx.audience ? ` for your ${ctx.audience}` : '';
+
+      const type =
+        lower.match(/\b(introduction|intro)\b/) ? 'introduction' :
+        lower.match(/\bconclusion\b/) ? 'conclusion' :
+        lower.match(/\bessay\b/) ? 'essay' :
+        lower.match(/\breport\b/) ? 'report' :
+        lower.match(/\bblog\b/) ? 'blog post' :
+        lower.match(/\bletter\b/) ? 'letter' :
+        lower.match(/\barticle\b/) ? 'article' :
+        lower.match(/\bparagraph\b/) ? 'paragraph' : 'piece';
+
       return [
-        `Open a blank document — don't format anything yet`,
-        `Type this at the top: "${s}"`,
-        `Write one sentence: the single main idea you need to get across`,
-        `Jot down 3 bullet points — the only things you need to cover`,
-        `Expand the first bullet into 2–3 full sentences`,
-        `Save what you have — you've started, and that's everything`,
+        `Open a blank document — don't touch formatting or title yet`,
+        `Write this at the top: "The main point of this ${type} is: ___" and finish that sentence`,
+        `List 3 things you know or want to say about ${what} — bullets, no sentences needed`,
+        `Expand the first bullet into 2–3 full sentences about ${what}${forWhat} — rough is fine`,
+        `Write the opening line: one sentence that makes someone want to read about "${what}"`,
+        `Save what you have — even a rough draft of "${what}" is infinitely more than nothing`,
       ];
     },
   },
   {
     name: 'coding',
-    test: t => /\b(code|debug|fix.*bug|\bbug\b|implement|build.*feature|write.*function|\bcomponent\b|refactor|deploy|\bscript\b|program|feature)\b/.test(t),
+    test: t => /\b(code|debug|fix.*bug|\bbug\b|implement|build.*feature|write.*function|\bcomponent\b|refactor|deploy|\bscript\b|program|feature|function|api|endpoint)\b/.test(t),
     steps: task => {
-      const s = brief(task, 52);
+      const ctx = extractContext(task);
+      const lower = task.toLowerCase();
+      const what = ctx.core;
+
+      const isBug = /\b(bug|fix|debug|broken|crash|error|issue|not working|failing)\b/.test(lower);
+      const isRefactor = /\b(refactor|clean up|reorganiz|rewrite|restructure)\b/.test(lower);
+
+      if (isBug) return [
+        `Open the file where "${what}" is happening — don't touch anything yet`,
+        `Read the full error message. Write down the exact line number and error text`,
+        `Add a console.log right before the failure — confirm the data you expect is actually there`,
+        `Run it and reproduce the problem — make sure you can trigger it consistently`,
+        `Make the smallest possible code change to fix just this error, nothing else`,
+        `Test the fix, confirm the bug is gone, then remove your debug logs and commit`,
+      ];
+
+      if (isRefactor) return [
+        `Open the file for "${what}" — read through it once without editing anything`,
+        `Write a comment at the top: // Refactoring: ${what}`,
+        `Identify the single biggest clarity or structure problem in the file — just one`,
+        `Fix only that one thing, then run tests or manually verify nothing broke`,
+        `Pick the next clearest problem and repeat — one isolated change at a time`,
+        `Commit what you have with a message describing what specifically improved`,
+      ];
+
       return [
-        `Open your editor and find the relevant file`,
-        `Write a comment at the top: // ${s}`,
-        `Write just the function or component signature — no body yet`,
-        `Fill in the simplest possible version of the logic`,
-        `Run it and read any errors carefully, one at a time`,
-        `Fix one error, test again, then commit what works`,
+        `Open your editor and find or create the file for "${what}"`,
+        `Write a comment: // TODO: ${what}`,
+        `Write just the function or component signature — no body, no logic yet`,
+        `Fill in the simplest possible version that could work — don't over-engineer`,
+        `Run it, read any errors one at a time, and fix the first one only`,
+        `Once it works at all, commit — even a rough first version of "${what}" is progress`,
       ];
     },
   },
   {
     name: 'studying',
     test: t => /\b(study|revise|review|memorize|memorise|practice|practise|\bprep\b|exam|quiz|lesson|chapter|course)\b/.test(t),
-    steps: () => [
-      `Open your notes or the material right now`,
-      `Write the topic at the top of a blank page`,
-      `Set a 5-minute timer and read or skim the first section`,
-      `Write 3 things you just learned, in your own words`,
-      `Write 1 question you still don't understand`,
-      `Find the answer to that one question in your materials`,
-    ],
+    steps: task => {
+      const ctx = extractContext(task);
+      const lower = task.toLowerCase();
+      const subject = ctx.topic || ctx.named || ctx.core;
+      const isExam = /\b(exam|test|quiz)\b/.test(lower);
+
+      return isExam ? [
+        `Get all your ${subject} materials open in front of you right now`,
+        `Write down the 5 topics most likely to appear in this ${lower.includes('quiz') ? 'quiz' : 'exam'} on ${subject}`,
+        `For each topic, write one sentence in your own words — no looking at notes yet`,
+        `Check your notes: what did you miss or get wrong in those sentences?`,
+        `Do 3 practice questions or recall the key facts for ${subject} from memory`,
+        `Write down the one thing about ${subject} you're least sure of — look it up now`,
+      ] : [
+        `Get your ${subject} notes or materials open right now — close other tabs`,
+        `Write "${subject}" at the top of a blank page`,
+        `Set a 10-minute timer and read the first section on ${subject} without pausing`,
+        `Write 3 things you just learned about ${subject} in your own words — no copying`,
+        `Write 1 question you still don't understand about ${subject}`,
+        `Find the answer to that one question in your materials right now`,
+      ];
+    },
   },
   {
     name: 'cleaning',
-    test: t => /\b(clean|tidy|organiz|organis|sort|declutter|vacuum|mop|laundry|dishes|hoover|sweep)\b/.test(t),
-    steps: () => [
-      `Set a 10-minute timer on your phone right now`,
-      `Pick up everything from the floor and pile it somewhere`,
-      `Throw away any obvious trash: wrappers, bottles, tissues`,
-      `Put away exactly 5 items from the pile — just 5`,
-      `Wipe down one surface only: desk, table, or counter`,
-      `Take a photo of the improvement — the progress is real`,
-    ],
+    test: t => /\b(clean|tidy|organiz|organis|sort|declutter|vacuum|mop|laundry|dishes|hoover|sweep|wash)\b/.test(t),
+    steps: task => {
+      const lower = task.toLowerCase();
+      const areaM = lower.match(/\b(room|kitchen|bathroom|desk|bedroom|living room|floor|counter|table|car|office)\b/);
+      const where = areaM ? ` the ${areaM[0]}` : '';
+      const isLaundry = /laundry|clothes|washing machine/.test(lower);
+      const isDishes = /dishes|washing up|sink/.test(lower);
+
+      if (isLaundry) return [
+        `Gather all the laundry into one pile — don't sort yet, just get it in one place`,
+        `Sort into exactly two piles: darks and lights`,
+        `Put the bigger pile in first — close the door, start the machine`,
+        `Set a phone alarm for when the cycle finishes so you actually move it`,
+        `While it runs, fold and put away any already-clean laundry`,
+        `Move the load to the dryer or hang it up the moment your alarm goes off`,
+      ];
+
+      if (isDishes) return [
+        `Clear the sink: stack everything neatly on one side in a pile`,
+        `Fill the sink with hot soapy water now`,
+        `Wash glasses and cups first — they're quick and the momentum helps`,
+        `Move to plates, then pots and pans last (greasiest always last)`,
+        `Dry and stack as you go — don't let things pile up wet beside the sink`,
+        `Wipe down the counter and the sink itself — you're done`,
+      ];
+
+      return [
+        `Set a 10-minute timer right now — you only have to work for 10 minutes`,
+        `Grab a bag and collect all obvious trash from${where || ' the space'} first`,
+        `Clear all flat surfaces — desk, table, floor — pile things temporarily`,
+        `Put exactly 5 items from the pile back where they belong`,
+        `Wipe down one surface${where ? ' in' + where : ''} — just one`,
+        `Take a photo — the progress is real and you deserve to see it`,
+      ];
+    },
   },
   {
     name: 'reading',
     test: t => /\b(read|finish reading|skim|chapter|book|paper|article)\b/.test(t),
-    steps: () => [
-      `Get the book open or find the article or tab right now`,
-      `Skim just the headings or first sentences for 60 seconds`,
-      `Read only the first paragraph — one paragraph, that's all`,
-      `Keep reading until you reach a natural pause or section break`,
-      `Write one sentence summing up what you just read`,
-      `Mark your place so you know exactly where to pick up next`,
-    ],
+    steps: task => {
+      const ctx = extractContext(task);
+      const lower = task.toLowerCase();
+      const what = ctx.named || ctx.topic || ctx.core;
+      const isPaper = /paper|article|journal|research/.test(lower);
+
+      return isPaper ? [
+        `Open "${what}" and read just the abstract and conclusion first — get the punchline`,
+        `Skim all headings and subheadings — get the structure in your head before the detail`,
+        `Read the introduction fully, one paragraph at a time`,
+        `Skim the methods section: what did they actually do and why does it matter?`,
+        `Read the results and discussion carefully — this is what "${what}" actually argues`,
+        `Write 2 sentences: what "${what}" claims, and what you think about that claim`,
+      ] : [
+        `Find your place in "${what}" and open it right now — don't look at anything else`,
+        `Read the chapter or section title and spend 30 seconds predicting what it covers`,
+        `Read only the first 3 paragraphs of "${what}" — just those, nothing more`,
+        `Keep reading until you reach a natural pause or section break`,
+        `Write one sentence: what just happened or what you just learned about "${what}"`,
+        `Bookmark your exact spot so you know where to pick up next time`,
+      ];
+    },
   },
   {
     name: 'exercise',
-    test: t => /\b(workout|exercise|gym|run|jog|yoga|stretch|training|lifting|cardio|pushups|sit.ups)\b/.test(t),
-    steps: () => [
-      `Change into your workout clothes right now`,
-      `Fill a water bottle and put it where you'll use it`,
-      `Do a 2-minute warm-up: arm swings, leg circles, light walk`,
-      `Start the first movement for just 30 seconds at easy intensity`,
-      `Complete 2 full sets of your main exercise`,
-      `Cool down: 2 minutes of slow movement and one good stretch`,
-    ],
+    test: t => /\b(workout|exercise|gym|run|jog|yoga|stretch|training|lifting|cardio|pushups|sit.ups|walk)\b/.test(t),
+    steps: task => {
+      const lower = task.toLowerCase();
+      const isRun = /run|jog|cardio/.test(lower);
+      const isWalk = /walk/.test(lower);
+      const isYoga = /yoga|stretch|flexibility/.test(lower);
+      const ctx = extractContext(task);
+      const what = ctx.core;
+
+      if (isRun) return [
+        `Put on your running shoes right now — don't think about it, just do it`,
+        `Fill a water bottle and leave it by the door`,
+        `Walk for 3 minutes to warm up: legs loose, breathing easy`,
+        `Pick up to a jog at a pace where you could hold a short sentence in conversation`,
+        `Run for ${ctx.isUrgent ? '10' : '20'} minutes — pace doesn't matter, just keep moving`,
+        `Walk for 3 minutes to cool down, then stretch your calves, quads, and hamstrings`,
+      ];
+
+      if (isWalk) return [
+        `Put your shoes on right now — this is step one, that's it`,
+        `Pick a route: a loop you know, or just "15 minutes out, turn back"`,
+        `Walk at a pace that feels comfortable — no performance required`,
+        `Leave your phone in your pocket unless you're listening to something`,
+        `Notice three specific things you see along the way — it helps the walk feel real`,
+        `When you get back, drink a glass of water`,
+      ];
+
+      if (isYoga) return [
+        `Roll out your mat and sit on it — that's the hardest part done`,
+        `Take 5 slow breaths: in for 4, hold for 2, out for 6`,
+        `Do 3 cat-cow stretches to wake up your spine`,
+        `Move through 3–5 poses at your own pace — let the body decide`,
+        `Hold your most needed stretch for 60 seconds longer than feels comfortable`,
+        `Lie flat on your back for 2 minutes — no phone, just breathe`,
+      ];
+
+      return [
+        `Get changed into your workout clothes right now — this signals your body`,
+        `Fill a water bottle and put it where you'll use it`,
+        `Do a 2-minute warm-up: arm swings, leg circles, light jog in place`,
+        `Start ${what} at 50% effort for the first set — ease in`,
+        `Complete your main sets at full effort, resting 60–90 seconds between`,
+        `Cool down: 2 minutes slow movement, then one long stretch per muscle group`,
+      ];
+    },
   },
   {
     name: 'meeting',
     test: t => /\b(meeting|presentation|present|pitch|interview|standup|prepare.*call|prep.*meeting)\b/.test(t),
-    steps: () => [
-      `Open a blank document and write the meeting name at the top`,
-      `List the 3 most important things to say or ask`,
-      `Write one sentence: your single main point`,
-      `Note any numbers, names, or facts you'll need to reference`,
-      `Check your setup: camera, mic, slides, link, or dial-in`,
-      `Set an alarm for 5 minutes before it starts`,
-    ],
+    steps: task => {
+      const ctx = extractContext(task);
+      const lower = task.toLowerCase();
+      const isInterview = /interview/.test(lower);
+      const isPitch = /pitch|presentation|present/.test(lower);
+      const what = ctx.topic || ctx.core;
+      const forWhat = ctx.audience ? ` for your ${ctx.audience}` : '';
+
+      if (isInterview) return [
+        `Write the role and company at the top of a blank page`,
+        `Write 3 things about this role or company you genuinely find interesting`,
+        `Prepare your answer to "tell me about yourself" — keep it under 90 seconds`,
+        `Write the 2 most relevant things you've done that directly match this role`,
+        `Write one sharp question to ask them that shows you've done real research`,
+        `Check your setup 10 minutes early: link, video, audio, and background`,
+      ];
+
+      if (isPitch) return [
+        `Write one sentence: the entire point of this presentation in plain language`,
+        `List the 3 things your audience needs to believe to agree with that sentence`,
+        `Build one slide or one clear talking point around each of those 3 things`,
+        `Write your opening line — the one that makes them lean forward${forWhat}`,
+        `Rehearse out loud once, all the way through — time yourself`,
+        `Check your tech: projector, clicker, backup PDF, audio, screen share`,
+      ];
+
+      return [
+        `Write the meeting name and your role in it at the top of a blank page`,
+        `List the 3 most important things to say or ask about "${what}"`,
+        `Write one sentence: your single main point for this meeting${forWhat}`,
+        `Note any numbers, names, or facts you'll need to reference`,
+        `Check your setup: camera, mic, link, or room and dial-in code`,
+        `Set an alarm for 5 minutes before it starts`,
+      ];
+    },
   },
   {
     name: 'form',
     test: t => /\b(fill|form|application|apply|submit|upload|registration|register|sign up)\b/.test(t),
-    steps: () => [
-      `Open the form, document, or application page right now`,
-      `Read through it once without filling anything in`,
-      `Gather what you'll need: ID, dates, reference numbers`,
-      `Fill in your personal details first — name, email, address`,
-      `Complete the remaining required fields one by one`,
-      `Review it once end-to-end, then click Submit`,
-    ],
+    steps: task => {
+      const ctx = extractContext(task);
+      const what = ctx.core;
+      return [
+        `Open "${what}" right now — the actual form, page, or document`,
+        `Read through it once without filling anything in — just understand its shape`,
+        `Gather everything you'll need: ID numbers, dates, reference codes, card details`,
+        `Fill in personal details first: name, email, address, phone — the easy fields`,
+        `Work through the remaining required fields one by one — don't skip any`,
+        `Read the whole thing end-to-end once, then submit`,
+      ];
+    },
   },
   {
     name: 'planning',
     test: t => /\b(plan|schedule|budget|outline|map out|organiz|organis|\blist\b)\b/.test(t),
     steps: task => {
-      const s = brief(task);
+      const ctx = extractContext(task);
+      const what = ctx.core;
       return [
-        `Open a blank document or notes app`,
-        `Write "${s}" at the very top`,
-        `Brain-dump everything related without editing — just list it all`,
-        `Circle or mark the 3 most important items`,
-        `Put those 3 in order: what needs to happen first?`,
-        `Write the very first action you can take today`,
+        `Open a blank document or notes app — one place, not three`,
+        `Write "${what}" at the very top`,
+        `Brain-dump everything related to "${what}" without editing — just list it all out`,
+        `Circle or star the 3 most important items on that list`,
+        `Put those 3 in order: what has to happen before anything else can?`,
+        `Write the very first physical action you can take today on "${what}"`,
       ];
     },
   },
 ];
 
 function defaultSteps(task) {
-  const s = brief(task);
+  const ctx = extractContext(task);
+  const what = ctx.core;
   return [
-    `Open whatever you need to start "${s}"`,
-    `Write the task name somewhere visible — doc, sticky, or phone`,
-    `Identify the one thing that's blocking you from beginning`,
-    `Do the smallest possible first action — just get it open`,
-    `Work on it for 5 minutes without stopping to evaluate`,
-    `Before you close anything, write down what the next step is`,
+    `Open whatever you need to get started on "${what}"`,
+    `Write "${what}" somewhere visible: document, sticky note, or phone note`,
+    `Write down the single thing that's blocking you from beginning right now`,
+    `Do the smallest physical action that counts as starting "${what}"`,
+    `Work on it for 5 minutes without stopping to evaluate how it's going`,
+    `Before you close anything, write down what the very next step is`,
   ];
 }
 
@@ -227,21 +446,111 @@ function breakdownLocally(task) {
   return defaultSteps(task);
 }
 
+// ── Local AI (Transformers.js) ────────────────
+const AI_MODEL = 'Xenova/LaMini-Flan-T5-248M';
+
+// Few-shot prompt to guide the small model's output format
+function buildPrompt(task) {
+  return `Give exactly 6 specific, actionable steps to complete the task. Each step must start with an action verb and directly reference details from the task.
+
+Task: write a cover letter for a software engineer job at a startup
+Steps:
+1. Open a blank document and find the job posting — keep it open beside you
+2. Write your opening line: one sentence about why this specific startup excites you
+3. Describe your most relevant experience that matches their stack or product area
+4. Pick one specific project that shows your skills directly — name it, describe what it did
+5. Write a closing paragraph with a clear ask: when you're available and what you'd love to discuss
+6. Read it aloud once, cut any filler sentences, save it as PDF
+
+Task: ${task}
+Steps:`;
+}
+
+dom.aiEnableBtn?.addEventListener('click', loadAI);
+
+async function loadAI() {
+  if (pipe) return true;
+  modelState = 'downloading';
+  dom.aiNudge.classList.add('hidden');
+  dom.aiStatus.classList.remove('hidden');
+  updateAIStatus('Loading AI library…', 0);
+
+  try {
+    const { pipeline, env } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
+    env.allowRemoteModels = true;
+    env.useBrowserCache  = true;
+
+    updateAIStatus('Downloading model (first time only, ~480 MB)…', 0.02);
+
+    pipe = await pipeline('text2text-generation', AI_MODEL, {
+      progress_callback: info => {
+        if (info.status === 'progress' && info.total) {
+          updateAIStatus(
+            `Downloading model… ${Math.round((info.loaded / info.total) * 100)}%`,
+            info.loaded / info.total
+          );
+        }
+        if (info.status === 'done') updateAIStatus('Preparing model…', 0.98);
+      },
+    });
+
+    modelState = 'ready';
+    updateAIStatus('AI ready ✦', 1);
+    setTimeout(() => dom.aiStatus.classList.add('hidden'), 2000);
+    showToast('Local AI enabled — breakdowns are now smarter ✦');
+    return true;
+  } catch (err) {
+    console.error('Transformers.js load failed:', err);
+    modelState = 'failed';
+    updateAIStatus('Download failed — using built-in rules', 0);
+    setTimeout(() => {
+      dom.aiStatus.classList.add('hidden');
+      dom.aiNudge.classList.remove('hidden');
+    }, 3500);
+    return false;
+  }
+}
+
+function updateAIStatus(text, pct) {
+  dom.aiStatusText.textContent = text;
+  dom.aiProgressFill.style.width = `${Math.round(pct * 100)}%`;
+}
+
+async function generateWithAI(task) {
+  if (!pipe || modelState !== 'ready') return null;
+  try {
+    const out = await pipe(buildPrompt(task), {
+      max_new_tokens: 320,
+      num_beams: 4,
+      early_stopping: true,
+    });
+
+    const raw = (out[0]?.generated_text || '').trim();
+
+    const lines = raw
+      .split('\n')
+      .map(l => l.replace(/^\d+[\.\):\-]\s*/, '').replace(/^[-•*]\s*/, '').trim())
+      .filter(l => l.length > 8 && l.length < 160 && /[a-zA-Z]/.test(l));
+
+    return lines.length >= 4 ? lines.slice(0, 6) : null;
+  } catch (err) {
+    console.error('AI generation failed:', err);
+    return null;
+  }
+}
+
 // ── Render steps ──────────────────────────────
 function renderSteps(texts) {
   steps = texts.map(t => ({ text: t, done: false }));
-
   dom.steps.innerHTML = '';
   dom.doneState.classList.add('hidden');
   dom.lamp.classList.remove('bright');
   dom.progressRow.classList.remove('hidden');
-
   steps.forEach((step, i) => {
     const li = buildStepEl(step, i);
     li.style.animationDelay = `${i * 65}ms`;
     dom.steps.appendChild(li);
   });
-
   updateProgress();
   highlightActive();
 }
@@ -251,12 +560,10 @@ function buildStepEl(step, i) {
   li.className = 'step';
   li.dataset.i = i;
 
-  // Typewriter step number
   const num = document.createElement('span');
   num.className = 'step-num';
   num.textContent = String(i + 1).padStart(2, '0');
 
-  // Custom checkbox
   const box = document.createElement('div');
   box.className = 'check-box';
   box.setAttribute('role', 'checkbox');
@@ -273,16 +580,13 @@ function buildStepEl(step, i) {
     if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); }
   });
 
-  // Editable label
   const label = document.createElement('div');
   label.className       = 'step-label';
   label.contentEditable = 'true';
   label.spellcheck      = true;
   label.textContent     = step.text;
   label.addEventListener('input', () => { steps[i].text = label.textContent.trim(); });
-  label.addEventListener('keydown', e => {
-    if (e.key === 'Enter') e.preventDefault();
-  });
+  label.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
 
   li.append(num, box, label);
   return li;
@@ -291,7 +595,6 @@ function buildStepEl(step, i) {
 // ── Toggle a step ─────────────────────────────
 function toggleStep(i) {
   steps[i].done = !steps[i].done;
-
   const li  = dom.steps.querySelector(`[data-i="${i}"]`);
   const box = li.querySelector('.check-box');
 
@@ -301,10 +604,7 @@ function toggleStep(i) {
     box.classList.add('bounce');
     box.setAttribute('aria-checked', 'true');
     box.addEventListener('animationend', () => box.classList.remove('bounce'), { once: true });
-
-    if (Math.random() > 0.35) {
-      showToast(KUDOS[Math.floor(Math.random() * KUDOS.length)]);
-    }
+    if (Math.random() > 0.35) showToast(KUDOS[Math.floor(Math.random() * KUDOS.length)]);
   } else {
     li.classList.remove('done');
     box.setAttribute('aria-checked', 'false');
@@ -312,25 +612,19 @@ function toggleStep(i) {
 
   updateProgress();
   highlightActive();
-
-  if (steps.every(s => s.done)) {
-    setTimeout(showDone, 450);
-  }
+  if (steps.every(s => s.done)) setTimeout(showDone, 450);
 }
 
 function highlightActive() {
   dom.steps.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
   const idx = steps.findIndex(s => !s.done);
-  if (idx >= 0) {
-    dom.steps.querySelector(`[data-i="${idx}"]`)?.classList.add('active');
-  }
+  if (idx >= 0) dom.steps.querySelector(`[data-i="${idx}"]`)?.classList.add('active');
 }
 
 function updateProgress() {
   const done  = steps.filter(s => s.done).length;
   const total = steps.length;
-  const pct   = total ? (done / total) * 100 : 0;
-  dom.progressFill.style.width  = `${pct}%`;
+  dom.progressFill.style.width  = `${total ? (done / total) * 100 : 0}%`;
   dom.progressCount.textContent = `${done} / ${total}`;
 }
 
@@ -354,7 +648,7 @@ dom.resetBtn.addEventListener('click', () => {
 function setLoading(on) {
   dom.loading.classList.toggle('hidden', !on);
   dom.breakdownBtn.disabled    = on;
-  dom.breakdownBtn.textContent = on ? 'Working...' : 'Break it down ✦';
+  dom.breakdownBtn.textContent = on ? 'Working…' : 'Break it down ✦';
   if (on) {
     dom.steps.innerHTML = '';
     dom.progressRow.classList.add('hidden');

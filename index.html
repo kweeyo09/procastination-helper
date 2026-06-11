@@ -40,7 +40,20 @@
         rows="2"
         aria-label="Task to break down"
       ></textarea>
-      <button id="breakdown-btn">Break it down ✦</button>
+      <div class="btn-row">
+        <button id="breakdown-btn">Break it down ✦</button>
+        <p class="ai-nudge" id="ai-nudge">
+          <button class="ai-enable-btn" id="ai-enable-btn">✦ Enable local AI — smarter, ~480 MB one-time</button>
+        </p>
+      </div>
+    </div>
+
+    <!-- AI download status -->
+    <div class="ai-status hidden" id="ai-status">
+      <span class="ai-status-text" id="ai-status-text">Downloading model…</span>
+      <div class="ai-track">
+        <div class="ai-fill" id="ai-progress-fill"></div>
+      </div>
     </div>
 
     <!-- Progress bar (hidden until steps exist) -->
