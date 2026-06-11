@@ -1,58 +1,42 @@
-# FocusNest 🕯️
+# FocusNest
 
 > Break big scary tasks into tiny, manageable steps. Built for ADHD brains.
 
-FocusNest is a cosy, lo-fi web app that uses Claude AI to break overwhelming tasks into 6 tiny micro-steps. Each step is designed to take under 5 minutes, start with a clear action verb, and feel almost too easy to begin — because starting is the hardest part.
+FocusNest is a warm, paper-toned web app that breaks overwhelming tasks into 6 micro-steps using a built-in rule-based engine. No API key, no account, no setup — just open it and go.
+
+**Live:** [kweeyo09.github.io/procastination-helper](https://kweeyo09.github.io/procastination-helper/)
 
 ---
 
 ## Features
 
-- **AI-powered breakdown** — Claude generates 6 tiny, specific steps with concrete action verbs
-- **Editable steps** — click any step to tweak the wording
-- **Active step highlight** — the next step glows like a lamp is shining on it
-- **Progress bar** — amber fill, satisfying to watch
+- **Built-in breakdown engine** — no AI key needed; rule-based logic covers 10 task categories (writing, coding, studying, cleaning, reading, exercise, meetings, forms, planning, email) with a smart fallback for anything else
+- **Editable steps** — click any step label to tweak the wording
+- **Active step highlight** — terracotta left-bar accent tracks your current step
+- **Progress bar** — mustard-to-terracotta gradient, satisfying to watch
 - **Encouragement toasts** — small kind messages as you tick things off
-- **Lamp glow** — dark cosy study room aesthetic, glow intensifies when you finish
-- **Zero install** — pure HTML/CSS/JS, just open the file
+- **Warm lamp glow** — brightens when you finish everything
+- **Zero install** — pure HTML/CSS/JS, open in any browser
 
 ---
 
 ## Getting started
 
-### 1. Clone the repo
+### Use it online
+
+[kweeyo09.github.io/procastination-helper](https://kweeyo09.github.io/procastination-helper/)
+
+### Run it locally
 
 ```bash
 git clone https://github.com/kweeyo09/procastination-helper.git
 cd procastination-helper
+open index.html        # macOS
+start index.html       # Windows
+xdg-open index.html    # Linux
 ```
 
-### 2. Open in your browser
-
-**Option A — direct open** (works in most cases)
-```bash
-open index.html       # macOS
-start index.html      # Windows
-xdg-open index.html   # Linux
-```
-
-**Option B — local server** (use this if the API call fails)
-```bash
-npx serve .
-# → open http://localhost:3000
-```
-
-Or with Python:
-```bash
-python -m http.server 8080
-# → open http://localhost:8080
-```
-
-### 3. Add your Anthropic API key
-
-1. Get a free key at [console.anthropic.com](https://console.anthropic.com)
-2. Click the **⚙ icon** in the app
-3. Paste your key — it's saved to your browser's `localStorage` only, never sent anywhere except Anthropic
+No server needed — it's a static file with no external dependencies at runtime.
 
 ---
 
@@ -60,7 +44,7 @@ python -m http.server 8080
 
 1. Type a big, overwhelming task into the box
 2. Press **Break it down ✦** (or hit Enter)
-3. Claude returns 6 micro-steps — each under 5 minutes, crystal clear
+3. Get 6 micro-steps tailored to the type of task
 4. Click any step text to edit it
 5. Tick steps off one by one
 6. Breathe. You did it.
@@ -69,44 +53,43 @@ python -m http.server 8080
 
 ## File structure
 
-```
+```text
 focusnest/
 ├── index.html   — page structure
-├── style.css    — dark lo-fi study room styles
-├── app.js       — Claude API + all app logic
+├── style.css    — paper/editorial design (Cormorant Garamond + Courier Prime)
+├── app.js       — rule-based breakdown engine + all app logic
 └── README.md    — this file
 ```
 
 ---
 
-## Customising the AI
+## How the breakdown engine works
 
-The prompt lives in `callClaude()` inside `app.js`. Easy things to change:
+`app.js` has a `CATEGORIES` array with 10 entries. Each has:
+- a `test(t)` regex that checks the task text
+- a `steps(task)` function that returns 6 tailored strings
 
-| Thing to change | Where |
-|---|---|
-| Number of steps | Change `exactly 6` in the prompt |
-| Step length limit | Change `5 minutes` in the rules |
-| Tone / personality | Edit the `system` prompt |
-| Model | Change `claude-sonnet-4-20250514` |
+On submit, the engine checks each category in order and returns the first match. If nothing matches, `defaultSteps()` returns a generic 6-step flow.
 
----
+To add a new category, add an entry to `CATEGORIES`:
 
-## Security note
-
-This app calls the Anthropic API directly from the browser using the `anthropic-dangerous-direct-browser-access` header — designed for exactly this kind of local/personal tool. Your key lives in `localStorage` and is only used for calls to Anthropic.
-
-To stay safe:
-- Set [usage limits](https://console.anthropic.com/settings/limits) on your key
-- Don't share your browser profile with untrusted people while the key is stored
+```js
+{
+  name: 'cooking',
+  test: t => /\b(cook|recipe|bake|meal prep)\b/.test(t),
+  steps: task => [
+    `Check you have all the ingredients`,
+    // ...5 more steps
+  ],
+},
+```
 
 ---
 
 ## Tech stack
 
 - Pure HTML / CSS / JavaScript — no frameworks, no build step
-- [Anthropic Claude API](https://docs.anthropic.com/)
-- Google Fonts: [Playfair Display](https://fonts.google.com/specimen/Playfair+Display), [DM Sans](https://fonts.google.com/specimen/DM+Sans), [Caveat](https://fonts.google.com/specimen/Caveat)
+- Google Fonts: Cormorant Garamond, Courier Prime, DM Sans
 
 ---
 
