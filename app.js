@@ -29,6 +29,9 @@ const LOADING_PHRASES = [
 let steps = [];
 let pipe = null;
 let modelState = 'idle'; // idle | downloading | ready | failed
+let currentTask = '';
+let currentSource = ''; // rule | learned | fallback | ai
+let learnToastShown = false;
 
 // ── DOM refs ──────────────────────────────────
 const dom = {
@@ -49,6 +52,9 @@ const dom = {
   aiStatus:       document.getElementById('ai-status'),
   aiStatusText:   document.getElementById('ai-status-text'),
   aiProgressFill: document.getElementById('ai-progress-fill'),
+  learnNote:      document.getElementById('learn-note'),
+  suggestRow:     document.getElementById('suggest-row'),
+  suggestLink:    document.getElementById('suggest-link'),
 };
 
 // ── Breakdown trigger ─────────────────────────
@@ -64,15 +70,24 @@ async function runBreakdown() {
   setLoading(true);
   await new Promise(r => setTimeout(r, 400 + Math.random() * 300));
 
-  let stepTexts;
+  let result;
   if (pipe && modelState === 'ready') {
-    stepTexts = (await generateWithAI(task)) || breakdownLocally(task);
+    const ai = await generateWithAI(task);
+    result = ai ? { texts: ai, source: 'ai' } : breakdownLocally(task);
   } else {
-    stepTexts = breakdownLocally(task);
+    result = breakdownLocally(task);
   }
 
-  renderSteps(stepTexts);
+  currentTask = task;
+  currentSource = result.source;
+  learnToastShown = false;
+
+  renderSteps(result.texts);
   setLoading(false);
+
+  dom.learnNote.classList.toggle('hidden', result.source !== 'fallback');
+  dom.suggestRow.classList.toggle('hidden', result.source !== 'fallback' && result.source !== 'learned');
+  if (result.source === 'learned') showToast('Using steps you taught me ✦');
 }
 
 // ── Context extraction ────────────────────────
@@ -496,10 +511,105 @@ function defaultSteps(task) {
 function breakdownLocally(task) {
   const t = task.toLowerCase().trim();
   for (const cat of CATEGORIES) {
-    if (cat.test(t)) return cat.steps(task);
+    if (cat.test(t)) return { texts: cat.steps(task), source: 'rule' };
   }
-  return defaultSteps(task);
+  const learned = matchLearned(task);
+  if (learned) return { texts: learned, source: 'learned' };
+  return { texts: defaultSteps(task), source: 'fallback' };
 }
+
+// ── Personal learned library (localStorage) ───
+// When a task misses every category and the user edits the generic
+// steps, the edited version is saved here and reused for similar tasks.
+const LEARNED_KEY = 'focusnest-learned';
+const LEARNED_MAX = 40;
+const STOPWORDS = new Set([
+  'a', 'an', 'the', 'my', 'your', 'our', 'his', 'her', 'their', 'its',
+  'for', 'to', 'of', 'on', 'in', 'at', 'by', 'with', 'and', 'or', 'but',
+  'this', 'that', 'these', 'those', 'some', 'out', 'up', 'it', 'is', 'be',
+  'do', 'get', 'got', 'need', 'have', 'want', 'about', 'all', 'new',
+]);
+
+function taskKeywords(task) {
+  const words = task.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/);
+  return [...new Set(words.filter(w => w.length > 2 && !STOPWORDS.has(w)))];
+}
+
+function loadLearned() {
+  try { return JSON.parse(localStorage.getItem(LEARNED_KEY)) || []; }
+  catch { return []; }
+}
+
+function saveLearnedList(list) {
+  try { localStorage.setItem(LEARNED_KEY, JSON.stringify(list)); }
+  catch { /* storage full or blocked — learning just won't persist */ }
+}
+
+function matchLearned(task) {
+  const kws = new Set(taskKeywords(task));
+  if (!kws.size) return null;
+
+  let best = null;
+  let bestScore = 0;
+  for (const entry of loadLearned()) {
+    const overlap = entry.keywords.filter(k => kws.has(k)).length;
+    const needed = Math.min(2, entry.keywords.length);
+    const score = overlap / entry.keywords.length;
+    if (overlap >= needed && score > bestScore) { best = entry; bestScore = score; }
+  }
+  if (!best) return null;
+
+  const ctx = extractContext(task);
+  return best.steps.map(s => s.split('{{what}}').join(ctx.core));
+}
+
+function rememberCurrentBreakdown() {
+  if (!currentTask || !steps.length) return;
+  const keywords = taskKeywords(currentTask);
+  if (!keywords.length) return;
+
+  // Template out the task's subject so the saved steps generalize:
+  // "import the footage for trip vlog" → "import the footage for {{what}}"
+  const ctx = extractContext(currentTask);
+  const texts = steps.map(s => {
+    if (ctx.core.length < 4) return s.text;
+    const esc = ctx.core.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return s.text.replace(new RegExp(esc, 'gi'), '{{what}}');
+  });
+
+  const sig = [...keywords].sort().join('|');
+  const list = loadLearned();
+  const existing = list.findIndex(e => e.sig === sig);
+  const entry = { sig, keywords, steps: texts, updated: Date.now() };
+  if (existing >= 0) list[existing] = entry;
+  else list.push(entry);
+  while (list.length > LEARNED_MAX) list.shift();
+  saveLearnedList(list);
+
+  if (!learnToastShown) {
+    learnToastShown = true;
+    showToast("Got it — I'll remember this kind of task ✦");
+  }
+}
+
+let learnTimer = null;
+function scheduleLearn() {
+  if (currentSource !== 'fallback' && currentSource !== 'learned') return;
+  clearTimeout(learnTimer);
+  learnTimer = setTimeout(rememberCurrentBreakdown, 1200);
+}
+
+// ── Suggest this breakdown (GitHub issue) ─────
+dom.suggestLink?.addEventListener('click', () => {
+  const title = encodeURIComponent(`Breakdown suggestion: ${currentTask}`);
+  const body = encodeURIComponent(
+    `**Task:** ${currentTask}\n\n**Suggested steps:**\n` +
+    steps.map((s, i) => `${i + 1}. ${s.text}`).join('\n') +
+    `\n\n_Submitted from the FocusNest suggest button._`
+  );
+  dom.suggestLink.href =
+    `https://github.com/kweeyo09/procastination-helper/issues/new?title=${title}&body=${body}`;
+});
 
 // ── Local AI (Transformers.js) ────────────────
 const AI_MODEL = 'Xenova/LaMini-Flan-T5-248M';
@@ -640,7 +750,10 @@ function buildStepEl(step, i) {
   label.contentEditable = 'true';
   label.spellcheck      = true;
   label.textContent     = step.text;
-  label.addEventListener('input', () => { steps[i].text = label.textContent.trim(); });
+  label.addEventListener('input', () => {
+    steps[i].text = label.textContent.trim();
+    scheduleLearn();
+  });
   label.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
 
   li.append(num, box, label);
@@ -691,10 +804,14 @@ function showDone() {
 
 dom.resetBtn.addEventListener('click', () => {
   steps = [];
+  currentTask = '';
+  currentSource = '';
   dom.steps.innerHTML   = '';
   dom.taskInput.value   = '';
   dom.progressRow.classList.add('hidden');
   dom.doneState.classList.add('hidden');
+  dom.learnNote.classList.add('hidden');
+  dom.suggestRow.classList.add('hidden');
   dom.lamp.classList.remove('bright');
   dom.taskInput.focus();
 });
@@ -708,6 +825,8 @@ function setLoading(on) {
     dom.steps.innerHTML = '';
     dom.progressRow.classList.add('hidden');
     dom.doneState.classList.add('hidden');
+    dom.learnNote.classList.add('hidden');
+    dom.suggestRow.classList.add('hidden');
     dom.loadingText.textContent = LOADING_PHRASES[Math.floor(Math.random() * LOADING_PHRASES.length)];
   }
 }

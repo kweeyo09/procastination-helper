@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post Post Hotel - Digital Key</title>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=Courier+Prime:wght@400;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/phosphor-icons"></script>
+    <style>
+        :root {
+            --color-mustard: #FFC233;
+            --color-terracotta: #C65D3B;
+            --color-warm-gray: #D1D1C9;
+            --color-ink: #1F1F1F;
+            --color-paper: #F4F1EA;
+        }
+        
+        body {
+            background-color: var(--color-paper);
+            color: var(--color-ink);
+            font-family: 'Cormorant Garamond', serif;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
+        }
+
+        .font-typewriter {
+            font-family: 'Courier Prime', monospace;
+        }
+
+        .font-sans-modern {
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .paper-texture {
+            position: relative;
+            overflow: hidden;
+        }
+        .paper-texture::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.5' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' fill='white'/%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.15'/%3E%3C/svg%3E");
+            opacity: 0.4;
+            pointer-events: none;
+            mix-blend-mode: multiply;
+        }
+
+        .card-cutout {
+            clip-path: polygon(0% 0%, 35% 0%, 50% 15%, 65% 0%, 100% 0%, 100% 100%, 0% 100%);
+        }
+
+        @keyframes rotate-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spin-slow {
+            animation: rotate-slow 20s linear infinite;
+        }
+
+        .perforated-edge {
+            background-image: radial-gradient(circle, transparent 4px, currentColor 5px);
+            background-size: 16px 16px;
+            background-position: -8px -8px;
+        }
+
+        .text-vertical {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+        }
+
+        .squiggly-border {
+             filter: url('#wavy'); 
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #D1D1C9;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="w-full min-h-screen flex flex-col lg:flex-row overflow-hidden selection:bg-[#C65D3B] selection:text-white">
+
+    <svg class="absolute w-0 h-0">
+        <filter id="wavy">
+            <feTurbulence x="0" y="0" baseFrequency="0.02" numOctaves="5" seed="2"></feTurbulence>
+            <feDisplacementMap in="SourceGraphic" scale="2"></feDisplacementMap>
+        </filter>
+    </svg>
+
+    <aside class="w-full lg:w-1/4 h-auto lg:h-screen border-r border-[#D1D1C9]/50 flex flex-col justify-between p-8 lg:p-12 z-20 bg-[#F4F1EA]">
+        <div class="flex flex-col gap-8">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 border border-current rounded-full flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-6 h-6">
+                        <path d="M4 12h16M4 12l6-6m-6 6l6 6"></path>
+                    </svg>
+                </div>
+                <span class="font-typewriter uppercase tracking-widest text-xs">Back to Booking</span>
+            </div>
+
+            <div class="space-y-4 mt-8">
+                <h1 class="text-5xl lg:text-7xl font-ital font-light leading-[0.9]">Post<br><span class="ml-8 italic">Post</span></h1>
+                <p class="font-typewriter text-sm max-w-[200px] leading-relaxed opacity-80">
+                    Est. 1924<br>
+                    Bad Hofgastein<br>
+                    Austria
+                </p>
+            </div>
+        </div>
+
+        <nav class="hidden lg:flex flex-col gap-4 mt-auto">
+            <a href="#" class="font-typewriter uppercase text-xs tracking-widest hover:text-[#C65D3B] transition-colors flex items-center gap-2">
+                <div class="w-1.5 h-1.5 bg-[#C65D3B] rounded-full"></div>
+                My Wallet
+            </a>
+            <a href="#" class="font-typewriter uppercase text-xs tracking-widest hover:text-[#C65D3B] transition-colors opacity-50">Hotel Guide</a>
+            <a href="#" class="font-typewriter uppercase text-xs tracking-widest hover:text-[#C65D3B] transition-colors opacity-50">Room Service</a>
+            <a href="#" class="font-typewriter uppercase text-xs tracking-widest hover:text-[#C65D3B] transition-colors opacity-50">Concierge</a>
+        </nav>
+    </aside>
+
+    <main class="flex-1 w-full h-full relative overflow-y-auto lg:overflow-hidden p-6 lg:p-0">
+        <div class="absolute top-0 right-0 p-12 opacity-10 pointer-events-none hidden lg:block">
+            <svg class="w-96 h-96 spin-slow" viewBox="0 0 200 200">
+                <path id="curve" d="M 100, 100 m -75, 0 a 75,75 0 1,1 150,0 a 75,75 0 1,1 -150,0" fill="transparent"></path>
+                <text width="500">
+                    <textPath xlink:href="#curve" class="font-typewriter text-[10px] uppercase tracking-[0.2em]">
+                        bad hofgastein • post post hotel • austria • est 1924 • 
+                    </textPath>
+                </text>
+            </svg>
+        </div>
+
+        <div class="w-full h-full flex flex-col lg:items-center lg:justify-center p-4 lg:p-12 gap-12 lg:gap-0">
+            <div class="lg:hidden mb-4">
+                <h2 class="font-typewriter uppercase text-xs tracking-widest mb-2 opacity-50">Current Selection</h2>
+                <div class="text-2xl font-serif italic">Key Card & Info</div>
+            </div>
+
+            <div class="relative w-full max-w-4xl h-auto lg:h-[600px] flex flex-col lg:block">
+                <div class="paper-texture relative lg:absolute lg:top-8 lg:right-0 bg-[#D1D1C9] w-full lg:w-[400px] h-[580px] rounded-lg shadow-xl transform lg:rotate-3 transition-transform hover:rotate-2 duration-500 z-10 flex flex-col border border-black/5">
+                    <div class="absolute left-4 top-0 bottom-0 h-full flex items-center justify-center border-r border-black/10 pr-2">
+                        <span class="text-vertical font-typewriter text-[10px] tracking-widest uppercase opacity-60">postposthotel.com s. 1421</span>
+                    </div>
+
+                    <div class="pl-12 pt-12 pr-8 pb-8 flex flex-col h-full relative">
+                        <div class="absolute top-8 right-8 w-24 h-24 border border-black/20 rounded-full flex items-center justify-center transform -rotate-12">
+                            <div class="w-20 h-20 border border-dashed border-black/30 rounded-full flex items-center justify-center">
+                                <span class="font-typewriter text-[10px] text-center leading-tight opacity-70">OFFICIAL<br>RECEIPT<br>NO. 992</span>
+                            </div>
+                        </div>
+
+                        <div class="mt-auto space-y-6">
+                            <div class="border-b border-black/10 pb-4">
+                                <p class="font-typewriter text-xs uppercase tracking-widest mb-1 opacity-50">Guest Name</p>
+                                <p class="font-serif text-xl">Elena V. Rostova</p>
+                            </div>
+                            <div class="border-b border-black/10 pb-4">
+                                <p class="font-typewriter text-xs uppercase tracking-widest mb-1 opacity-50">Check In</p>
+                                <p class="font-serif text-xl">Oct 24, 2024</p>
+                            </div>
+                            <div class="border-b border-black/10 pb-4">
+                                <p class="font-typewriter text-xs uppercase tracking-widest mb-1 opacity-50">Check Out</p>
+                                <p class="font-serif text-xl">Oct 28, 2024</p>
+                            </div>
+                        </div>
+
+                        <div class="absolute bottom-0 left-0 right-0 h-8 border-t-2 border-dashed border-black/10 flex items-center justify-between px-6">
+                            <span class="font-typewriter text-[8px] uppercase tracking-wider">Tear here for receipt</span>
+                            <svg class="w-4 h-4 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243zm0-5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z"></path></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="paper-texture relative lg:absolute lg:top-4 lg:left-24 bg-[#C65D3B] w-full lg:w-[380px] h-[550px] rounded-lg shadow-xl transform lg:-rotate-2 transition-transform hover:-rotate-1 duration-500 z-20 flex flex-col text-[#F4F1EA] -mt-24 lg:mt-0">
+                    <div class="p-8 h-full flex flex-col items-center text-center relative overflow-hidden">
+                        <div class="absolute -left-12 top-24 w-48 h-48 rounded-full border border-[#F4F1EA]/30 flex items-center justify-center animate-[spin_60s_linear_infinite]">
+                            <svg class="w-full h-full" viewBox="0 0 100 100">
+                                <path id="circlePath" d="M 50, 50 m -40, 0 a 40,40 0 1,1 80,0 a 40,40 0 1,1 -80,0" fill="none"></path>
+                                <text class="fill-[#F4F1EA] text-[6px] font-typewriter uppercase tracking-[0.3em]">
+                                    <textPath xlink:href="#circlePath">Bad Hofgastein • Have a wonderful stay • </textPath>
+                                </text>
+                            </svg>
+                        </div>
+                        
+                        <div class="mt-auto mb-16 z-10 relative">
+                            <svg class="w-16 h-16 mx-auto mb-6 text-[#F4F1EA] opacity-90" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zM7 9c0-2.76 2.24-5 5-5s5 2.24 5 5c0 2.88-2.88 7.19-5 9.88C9.92 16.21 7 11.85 7 9z"></path>
+                                <circle cx="12" cy="9" r="2.5"></circle>
+                            </svg>
+                            <h3 class="font-serif text-3xl italic mb-2">Explore the area</h3>
+                            <p class="font-typewriter text-xs opacity-80 leading-relaxed max-w-[200px] mx-auto">
+                                Discover the hidden trails<br>of the Gastein Valley.
+                            </p>
+                        </div>
+
+                        <div class="absolute right-4 top-0 bottom-0 h-full flex items-center justify-center">
+                            <span class="text-vertical font-typewriter text-[9px] tracking-[0.2em] uppercase opacity-60">tel. +43 (0) 6432 6260 • mail post@postpost.at</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="paper-texture relative lg:absolute lg:top-12 lg:left-0 bg-[#FFC233] w-full lg:w-[420px] h-[540px] rounded-lg shadow-2xl z-30 flex flex-col -mt-24 lg:mt-0 transition-all hover:translate-y-[-5px]">
+                    <div class="absolute top-0 left-1/2 transform -translate-x-1/2 w-32 h-16 bg-[#F4F1EA] rounded-b-full shadow-inner border-t-0 z-40"></div>
+                    
+                    <div class="p-8 lg:p-10 h-full flex flex-col relative">
+                        <div class="flex justify-between items-start mt-8">
+                            <div class="flex flex-col">
+                                <span class="font-serif text-5xl lg:text-6xl leading-none tracking-tight text-[#1F1F1F]">For cosy</span>
+                                <span class="font-serif text-5xl lg:text-6xl leading-none italic text-[#1F1F1F] pl-4">days</span>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col items-center mt-12 mb-8">
+                            <div class="w-24 h-24 mb-2 relative">
+                                <svg viewBox="0 0 200 200" class="w-full h-full text-[#1F1F1F]">
+                                    <path d="M40,120 Q60,110 80,115 T120,110 T160,115" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
+                                    <path d="M50,120 L60,150 M140,115 L150,145 M100,112 L110,148" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
+                                    <path d="M140,80 Q130,60 110,65 Q90,50 70,70 L60,90 Q80,100 100,95 L120,90 Z" fill="currentColor" opacity="0.9"></path> 
+                                    <circle cx="110" cy="55" r="10" fill="currentColor"></circle>
+                                    <path d="M120,55 L140,50 L135,70" fill="currentColor"></path>
+                                    <path d="M30,130 L10,130 M25,125 L15,125" stroke="currentColor" stroke-width="2"></path>
+                                </svg>
+                            </div>
+                            <div class="text-center">
+                                <span class="font-serif text-3xl block">at</span>
+                                <span class="font-serif text-4xl block">Post</span>
+                                <span class="font-serif text-4xl block italic">Post</span>
+                            </div>
+                        </div>
+
+                        <div class="absolute bottom-10 left-10">
+                            <div class="relative w-32 h-28 flex items-center justify-center transform -rotate-6">
+                                <svg class="absolute w-full h-full text-[#1F1F1F]" viewBox="0 0 100 100" fill="none">
+                                    <path d="M50 5 L95 90 L5 90 Z" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 1" stroke-linejoin="round" class="squiggly-border"></path>
+                                    <path d="M50 8 
+                                             Q55 18 58 24 Q61 30 65 38 Q69 46 72 52 Q76 60 80 68 Q84 76 88 84 Q92 92 88 92 
+                                             Q80 92 72 92 Q64 92 56 92 Q48 92 40 92 Q32 92 24 92 Q16 92 12 92 Q8 92 12 84 
+                                             Q16 76 20 68 Q24 60 28 52 Q32 46 36 38 Q40 30 43 24 Q46 18 50 8 Z" fill="none" stroke="currentColor" stroke-width="0.8"></path>
+                                </svg>
+                                <div class="relative z-10 text-center pt-4">
+                                    <span class="block font-sans-modern text-[10px] uppercase tracking-wider mb-1">Room No</span>
+                                    <span class="block font-typewriter text-3xl font-bold">204</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="absolute bottom-10 right-10">
+                             <button class="group w-16 h-16 rounded-full bg-[#1F1F1F] text-[#FFC233] flex items-center justify-center shadow-lg hover:scale-110 transition-transform cursor-pointer">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256" class="group-hover:hidden"><path d="M168,104a40,40,0,1,0-40-40A40,40,0,0,0,168,104Zm0-64a24,24,0,1,1-24,24A24,24,0,0,1,168,40ZM232,168a8,8,0,0,1-8,8H192v24a8,8,0,0,1-16,0V176H144a8,8,0,0,1,0-16h88A8,8,0,0,1,232,168ZM48,168a8,8,0,0,1-8,8H32v24a8,8,0,0,1-16,0V176H8a8,8,0,0,1,0-16h8a40,40,0,0,1,37.36-26.65,7.92,7.92,0,0,1,1.28.11A40,40,0,0,1,96,168v8H72v24a8,8,0,0,1-16,0V176H48Zm8-32a24,24,0,0,0-21.28,32h42.56A24,24,0,0,0,56,136Z"></path></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256" class="hidden group-hover:block"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm45.66-93.66a8,8,0,0,1,0,11.32l-32,32a8,8,0,0,1-11.32-11.32L148.69,136H88a8,8,0,0,1,0-16h60.69l-18.35-18.34a8,8,0,0,1,11.32-11.32Z"></path></svg>
+                             </button>
+                             <span class="absolute -bottom-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap text-[10px] uppercase tracking-widest font-typewriter opacity-0 group-hover:opacity-100 transition-opacity">Unlock</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="w-full max-w-2xl mt-16 text-center lg:text-left grid grid-cols-1 md:grid-cols-3 gap-8 opacity-80">
+                <div class="flex flex-col items-center lg:items-start gap-2">
+                    <div class="w-8 h-8 rounded-full bg-[#1F1F1F] text-white flex items-center justify-center">
+                        <span class="font-serif italic text-lg">i</span>
+                    </div>
+                    <h3 class="font-serif text-lg">Check-in Info</h3>
+                    <p class="font-typewriter text-xs leading-relaxed max-w-[150px]">
+                        Front desk open 24/7.<br>
+                        Dial 9 for assistance.
+                    </p>
+                </div>
+                <div class="flex flex-col items-center lg:items-start gap-2">
+                    <div class="w-8 h-8 rounded-full bg-[#C65D3B] text-white flex items-center justify-center">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"></path></svg>
+                    </div>
+                    <h3 class="font-serif text-lg">Wifi Access</h3>
+                    <p class="font-typewriter text-xs leading-relaxed max-w-[150px]">
+                        Network: PostGuest<br>
+                        Pass: CosyStay2024
+                    </p>
+                </div>
+                <div class="flex flex-col items-center lg:items-start gap-2">
+                    <div class="w-8 h-8 rounded-full bg-[#FFC233] text-[#1F1F1F] flex items-center justify-center">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+                    </div>
+                    <h3 class="font-serif text-lg">Breakfast</h3>
+                    <p class="font-typewriter text-xs leading-relaxed max-w-[150px]">
+                        Served daily<br>
+                        07:00 - 11:00
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="fixed inset-0 pointer-events-none opacity-[0.03] z-50" style="background-image: url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.8%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E');"></div>
+</body>
+</html>

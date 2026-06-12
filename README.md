@@ -10,7 +10,9 @@ FocusNest is a warm, paper-toned web app that breaks overwhelming tasks into 6 m
 
 ## Features
 
-- **Built-in breakdown engine** — rule-based logic covers 10 task categories (writing, coding, studying, cleaning, reading, exercise, meetings, forms, planning, email) with a smart fallback for anything else
+- **Built-in breakdown engine** — rule-based logic covers 12 task categories (writing, coding, studying, cleaning, reading, exercise, meetings, forms, planning, email, video, creative) with a smart fallback for anything else
+- **Learns from you** — if a task doesn't match any category, edit the generic steps to fit and FocusNest remembers them (stored in your browser's localStorage) for similar tasks next time
+- **Suggest a breakdown** — one click opens a pre-filled GitHub issue so good breakdowns can be added to the app for everyone
 - **Editable steps** — click any step label to tweak the wording
 - **Active step highlight** — terracotta left-bar accent tracks your current step
 - **Progress bar** — mustard-to-terracotta gradient, satisfying to watch
@@ -65,11 +67,12 @@ focusnest/
 
 ## How the breakdown engine works
 
-`app.js` has a `CATEGORIES` array with 10 entries. Each has:
+`app.js` has a `CATEGORIES` array with 12 entries. Each has:
+
 - a `test(t)` regex that checks the task text
 - a `steps(task)` function that returns 6 tailored strings
 
-On submit, the engine checks each category in order and returns the first match. If nothing matches, `defaultSteps()` returns a generic 6-step flow.
+On submit, the engine checks each category in order and returns the first match. If nothing matches, it checks your personal learned library (breakdowns you've taught it by editing fallback steps — kept in localStorage, never sent anywhere). Only if that misses too does `defaultSteps()` return a generic 6-step flow.
 
 To add a new category, add an entry to `CATEGORIES`:
 
