@@ -633,6 +633,8 @@ Steps:`;
 
 dom.aiEnableBtn?.addEventListener('click', loadAI);
 
+const AI_FLAG = 'focusnest-ai-on';
+
 async function loadAI() {
   if (pipe) return true;
   modelState = 'downloading';
@@ -641,17 +643,26 @@ async function loadAI() {
   updateAIStatus('Loading AI library…', 0);
 
   try {
+    // Ask the browser not to evict the cached model under storage pressure
+    navigator.storage?.persist?.().catch(() => {});
+
+    // Transformers.js stores model files in Cache Storage under this name
+    const cached = window.caches ? await caches.has('transformers-cache') : false;
+
     const { pipeline, env } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
     env.allowRemoteModels = true;
     env.useBrowserCache  = true;
 
-    updateAIStatus('Downloading model (first time only, ~480 MB)…', 0.02);
+    updateAIStatus(
+      cached ? 'Loading model from cache…' : 'Downloading model (first time only, ~480 MB)…',
+      0.02
+    );
 
     pipe = await pipeline('text2text-generation', AI_MODEL, {
       progress_callback: info => {
         if (info.status === 'progress' && info.total) {
           updateAIStatus(
-            `Downloading model… ${Math.round((info.loaded / info.total) * 100)}%`,
+            `${cached ? 'Loading model…' : 'Downloading model…'} ${Math.round((info.loaded / info.total) * 100)}%`,
             info.loaded / info.total
           );
         }
@@ -660,9 +671,10 @@ async function loadAI() {
     });
 
     modelState = 'ready';
+    try { localStorage.setItem(AI_FLAG, '1'); } catch { /* private mode */ }
     updateAIStatus('AI ready ✦', 1);
     setTimeout(() => dom.aiStatus.classList.add('hidden'), 2000);
-    showToast('Local AI enabled — breakdowns are now smarter ✦');
+    showToast(cached ? 'Local AI ready ✦' : 'Local AI enabled — breakdowns are now smarter ✦');
     return true;
   } catch (err) {
     console.error('Transformers.js load failed:', err);
@@ -675,6 +687,10 @@ async function loadAI() {
     return false;
   }
 }
+
+// If the user enabled AI before, restore it automatically — the model
+// loads from the browser cache, so this is seconds, not a redownload.
+if (localStorage.getItem(AI_FLAG) === '1') loadAI();
 
 function updateAIStatus(text, pct) {
   dom.aiStatusText.textContent = text;
