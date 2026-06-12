@@ -82,7 +82,7 @@ function extractContext(task) {
 
   // Strip leading action verb + optional article to get the core subject
   const withoutVerb = t.replace(
-    /^(write|draft|finish|complete|do|create|make|fix|build|start|study|read|clean|organis[e]?|organiz[e]?|plan|send|fill|code|debug|implement|prepare|prep|reply|respond|review|update|edit|research|find|check)\s+(a\s+|an\s+|my\s+|the\s+|this\s+|out\s+|to\s+|for\s+)?/i, ''
+    /^(writ(?:e|ing)|draft(?:ing)?|finish(?:ing)?|complet(?:e|ing)|do(?:ing)?|creat(?:e|ing)|mak(?:e|ing)|fix(?:ing)?|build(?:ing)?|start(?:ing)?|study(?:ing)?|read(?:ing)?|clean(?:ing)?|organis(?:e|ing)?|organiz(?:e|ing)?|plan(?:ning)?|send(?:ing)?|fill(?:ing)?|cod(?:e|ing)|debug(?:ging)?|implement(?:ing)?|prepar(?:e|ing)|prep(?:ping)?|repl(?:y|ying)|respond(?:ing)?|review(?:ing)?|updat(?:e|ing)|edit(?:ing)?|research(?:ing)?|find(?:ing)?|check(?:ing)?|film(?:ing)?|record(?:ing)?|design(?:ing)?|draw(?:ing)?|practic(?:e|ing)|practis(?:e|ing)|learn(?:ing)?)\s+(a\s+|an\s+|my\s+|the\s+|this\s+|some\s+|out\s+|to\s+|for\s+)?/i, ''
   ).trim();
 
   // Topic: what comes after "on", "about", "regarding"
@@ -143,6 +143,61 @@ const CATEGORIES = [
         `Add context around that sentence: why you're writing, what you need from them`,
         `Close with a specific ask — not "let me know" but exactly what you want and when`,
         `Read it once end-to-end, adjust tone if needed, then Send`,
+      ];
+    },
+  },
+  {
+    name: 'video',
+    test: t => /\b(video|videos|vlog|footage|clip|clips|montage|reel|reels|short|shorts|youtube|tiktok|premiere|capcut|davinci|final cut|after effects)\b/.test(t),
+    steps: task => {
+      const ctx = extractContext(task);
+      const lower = task.toLowerCase();
+      const what = ctx.core;
+
+      const isEditing = /\b(edit|editing|cut|cutting|trim|color|grade|montage|post)\b/.test(lower);
+      const isFilming = /\b(film|filming|record|recording|shoot|shooting)\b/.test(lower);
+
+      if (isEditing) return [
+        `Open your editing app and drop the raw footage for "${what}" onto the timeline — nothing else yet`,
+        `Watch the footage once through and mark the 3 strongest moments you definitely want to keep`,
+        `Do a rough cut: delete dead air, false starts, and anything boring — speed over polish`,
+        `Reorder the keeper clips so "${what}" actually flows as a story from start to end`,
+        `One polish pass only: music or audio levels, transitions where cuts feel harsh, color if needed`,
+        `Watch the whole edit once start to finish, fix only what genuinely bugs you, then export`,
+      ];
+
+      if (isFilming) return [
+        `Write one sentence: what should someone know or feel after watching "${what}"?`,
+        `Jot a loose shot list — 3 to 5 bullet points of what you need to capture`,
+        `Set up your space: camera or phone position, light source in front of you, quick mic test`,
+        `Record the first take of the opening — it will be bad, that's the warm-up, keep it anyway`,
+        `Work through the rest of your shot list one bullet at a time`,
+        `Review what you got before packing up — re-shoot only anything truly unusable`,
+      ];
+
+      return [
+        `Decide the single point of "${what}" — one sentence, write it down`,
+        `Sketch a loose outline: opening hook, 2–3 main beats, ending`,
+        `Gather what you need in one place: footage, images, music, or your recording setup`,
+        `Make the first 10 seconds — the hook is the hardest part, so do it first`,
+        `Build the rest beat by beat, rough versions only — resist polishing as you go`,
+        `Do one polish pass on the whole thing, then export or publish "${what}"`,
+      ];
+    },
+  },
+  {
+    name: 'creative',
+    test: t => /\b(design|draw|drawing|paint|sketch|illustrat|logo|poster|thumbnail|photoshop|figma|canva|animat|music|song|beat|melody|mix|master|compose|art|artwork)\b/.test(t),
+    steps: task => {
+      const ctx = extractContext(task);
+      const what = ctx.core;
+      return [
+        `Open your tool of choice and create a blank canvas or file named after "${what}"`,
+        `Spend 3 minutes collecting 2–3 references that have the vibe you want for ${what}`,
+        `Make the ugliest possible rough version of ${what} — thumbnail-sized, zero pressure`,
+        `Pick the part of the rough you like most and develop just that section`,
+        `Build out the rest around it, working loose to tight — details come last`,
+        `Step away for 2 minutes, come back, adjust the one thing that jumps out, then call it done`,
       ];
     },
   },
